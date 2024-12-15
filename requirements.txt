@@ -2,5 +2,5 @@ Flask
 numpy
 joblib
 opencv-python
-scikit-learn
+scikit-learn==1.5.2
 xgboost
