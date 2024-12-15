@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEO Probability Calculator</title>
+</head>
+<body>
+    <h1>Do You Have a CEO Face?</h1>
+    <p>Upload your face photo and see the probability of becoming a CEO!</p>
+    
+    <!-- 圖片上傳區 -->
+    <input type="file" id="fileInput" accept="image/*">
+    <button onclick="uploadImage()">Upload & Predict</button>
+    
+    <!-- 顯示結果 -->
+    <div id="result"></div>
+    <div id="suggestions"></div>
+
+    <script>
+        async function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('result');
+            const suggestionsDiv = document.getElementById('suggestions');
+            
+            if (fileInput.files.length === 0) {
+                alert('Please upload an image first.');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            // 發送 POST 請求到 Flask API
+            try {
+                const response = await fetch('https://your-backend-url.com/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                // 顯示結果
+                resultDiv.innerHTML = `<h2>Probability of Becoming a CEO: ${data.ceo_probability}%</h2>`;
+                suggestionsDiv.innerHTML = `<p><strong>Suggestions:</strong> ${data.suggestions}</p>`;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error predicting CEO probability. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
