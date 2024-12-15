@@ -4,4 +4,4 @@ joblib
 opencv-python
 scikit-learn==1.5.2
 xgboost
-gunicorn
+waitress==3.0.0
