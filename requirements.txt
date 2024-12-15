@@ -3,3 +3,4 @@ numpy
 joblib
 opencv-python
 scikit-learn
+xgboost
