@@ -10,6 +10,10 @@ app = Flask(__name__)
 model = joblib.load("stacking_model.pkl")  # 你訓練好的模型
 important_features = ['鼻子寬度', '下巴長度', '眼角距離']  # 替換成你的前三重要特徵
 
+@app.route("/")
+def home():
+    return "CEO Predictor is running!"
+    
 @app.route("/predict", methods=["POST"])
 def predict():
     # 獲取圖片
@@ -35,5 +39,7 @@ def predict():
     }
     return jsonify(response)
 
+# 啟動 Flask 應用程式
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # 從環境變數獲取 PORT
+    app.run(host="0.0.0.0", port=port, debug=True)
