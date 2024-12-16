@@ -29,7 +29,7 @@ def predict():
     return jsonify({'ceo_probability': round(probability, 2)})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # 確保端口正確配置
+    port = int(os.environ.get("PORT", 5000))  # 默認值為 5000
     try:
         from waitress import serve
         print("Running with Waitress server...")
