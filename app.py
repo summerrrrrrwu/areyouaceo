@@ -29,13 +29,11 @@ def predict():
     return jsonify({'ceo_probability': round(probability, 2)})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 10000))  # 確保端口正確配置
     try:
-        # 嘗試使用 Waitress 啟動
         from waitress import serve
         print("Running with Waitress server...")
         serve(app, host="0.0.0.0", port=port)
     except ImportError:
-        # 如果未安裝 Waitress，使用 Flask 內建開發伺服器
         print("Waitress 未安裝，回退到 Flask 開發伺服器...")
         app.run(host="0.0.0.0", port=port, debug=False)
