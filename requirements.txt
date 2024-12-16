@@ -4,3 +4,4 @@ numpy==1.25.0
 Pillow
 opencv-python
 scikit-learn==1.5.2
+xgboost
