@@ -28,11 +28,14 @@
             const result = await response.json();
 
             // 顯示結果
-            document.getElementById("result").innerHTML = `
-                <h2>你的 CEO 成功機率：${result.probability}%</h2>
-                <p>${result.suggestion}</p>
+            if (result.error) {
+            document.getElementById("result").innerHTML = `<p style="color:red;">${result.error}</p>`;
+            } else {
+                document.getElementById("result").innerHTML = `
+                <h2>你的 CEO 成功機率：${result["CEO Probability"]}</h2>
+                <p>${result["Top Recommendations"].join('<br>')}</p>
             `;
-        }
+}
     </script>
 </body>
 </html>
