@@ -1,44 +1,49 @@
-from flask import Flask, request, jsonify
-import numpy as np
-import joblib
 import os
-from PIL import Image
-import cv2
+import joblib
+import numpy as np
+from flask import Flask, request, jsonify, render_template
+from sklearn.preprocessing import StandardScaler
 
+# 初始化 Flask 應用
 app = Flask(__name__)
 
-# 載入模型
-model = joblib.load("stacking_model.pkl")  # 你訓練好的模型
-important_features = ['鼻子寬度', '下巴長度', '眼角距離']  # 替換成你的前三重要特徵
+# 加載保存的 Random Forest 模型
+model = joblib.load("random_forest_model.pkl")
+scaler = StandardScaler()  # 假設使用 StandardScaler 標準化
 
+# 前端頁面 (HTML, 上傳功能)
 @app.route("/")
-def home():
-    return "CEO Predictor is running!"
-    
+def index():
+    return render_template("index.html")
+
+# 預測端點
 @app.route("/predict", methods=["POST"])
 def predict():
-    # 獲取圖片
-    file = request.files['file']
-    image = Image.open(file).convert("RGB")
-    image = np.array(image)
+    try:
+        # 接收輸入數據
+        uploaded_data = request.json["features"]
+        input_features = np.array(uploaded_data).reshape(1, -1)
 
-    # 圖片處理邏輯（假設你有固定輸入維度）
-    processed_image = cv2.resize(image, (224, 224)).flatten().reshape(1, -1)  # 替換成模型輸入邏輯
+        # 標準化輸入數據
+        input_scaled = scaler.fit_transform(input_features)
 
-    # 預測
-    probability = model.predict_proba(processed_image)[0, 1] * 100  # CEO 機率
+        # 預測
+        prediction_proba = model.predict_proba(input_scaled)[0]
+        result = {"CEO Probability": f"{prediction_proba[1]*100:.2f}%"}
+        
+        # 給出醫美建議 (搞笑版)
+        recommendations = []
+        if "right eyebrow triangle angles_1" in uploaded_data:
+            recommendations.append("建議：提眉手術，眉尾高一點更有領導力！")
+        if "triangle angles (eye tail, lower lip, center)_2" in uploaded_data:
+            recommendations.append("建議：微笑訓練，嘴角上揚更 CEO！")
 
-    # 搞笑醫美建議
-    suggestions = [
-        f"鼻子太寬啦！可以考慮醫美縮窄一下鼻翼。",
-        f"下巴太短了，補個下巴立刻 CEO 氣場全開！",
-        f"眼角距離不夠理想？開個眼角當 CEO 無人能擋！"
-    ]
-    response = {
-        "probability": round(probability, 2),
-        "suggestion": suggestions[np.argmax(processed_image)]  # 搞笑建議
-    }
-    return jsonify(response)
+        result["Recommendations"] = recommendations
+
+        return jsonify(result)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 # 啟動 Flask 應用程式
 if __name__ == "__main__":
