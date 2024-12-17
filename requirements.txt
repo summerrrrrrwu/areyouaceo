@@ -5,3 +5,6 @@ Pillow
 opencv-python
 scikit-learn==1.5.2
 xgboost
+pandas
+mediapipe
+opencv-python-headless
