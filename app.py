@@ -149,7 +149,6 @@ def calculate_42_features(landmarks):
         print(f"Error calculating features: {e}")
         return np.zeros(42)
 
-# 預測路由
 @app.route("/")
 def index():
     return render_template("index.html")
