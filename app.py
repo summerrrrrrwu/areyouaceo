@@ -154,8 +154,9 @@ def calculate_42_features(landmarks):
 def index():
     return render_template("index.html")
 
-@app.route("/predict", methods=["POST"])
+@app.route("https://areyouaceo.onrender.com", methods=["POST"])
 def predict():
+    print("收到請求，開始預測！")
     if "file" not in request.files:
         return jsonify({"error": "請選擇一個檔案！"})
 
@@ -164,37 +165,30 @@ def predict():
         return jsonify({"error": "沒有檔案被選擇！"})
 
     # 保存圖片
+    print("儲存圖片中...")
     file_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(file.filename))
     file.save(file_path)
 
     # 提取特徵
+    print("提取特徵中...")
     features = extract_42_features(file_path)
+    print(f"提取特徵: {features}")
     if features is None:
         return jsonify({"error": "無法檢測到臉部，請使用正確的臉部圖片！"})
 
-    # 記錄特徵提取的日誌
-    print(f"提取的特徵: {features}")
-    print(f"特徵長度: {len(features)}")
-
-    # 標準化特徵並進行預測
+    # 標準化特徵
     features_scaled = scaler.transform([features])
-    print("已完成特徵標準化")
+    print("已完成標準化")
 
+    # 預測
     prediction_proba = model.predict_proba(features_scaled)[0]
-    print(f"預測結果: {prediction_proba}")
+    print(f"預測概率: {prediction_proba}")
 
-    # 給出建議
-    recommendations = [
-        "建議：微笑一下，提升自信！",
-        "建議：下巴線條優化，增強領袖氣質！",
-        "建議：提眉手術，改善眉毛角度！"
-    ]
-
+    # 返回結果
     response = {
         "CEO Probability": f"{prediction_proba[1] * 100:.2f}%",
-        "Top Recommendations": recommendations[:3]
+        "Top Recommendations": ["微笑一下，提升自信！", "提眉手術，改善眉毛角度！"]
     }
-
     return jsonify(response)
 
 if __name__ == "__main__":
