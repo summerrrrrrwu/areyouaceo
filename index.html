@@ -21,7 +21,7 @@
             formData.append("file", fileInput.files[0]);
 
             // 發送請求到後端 API
-            const response = await fetch("https://your-backend-url.onrender.com/predict", {
+            const response = await fetch("https://areyouaceo.onrender.com", {
                 method: "POST",
                 body: formData
             });
