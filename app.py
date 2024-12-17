@@ -154,7 +154,7 @@ def calculate_42_features(landmarks):
 def index():
     return render_template("index.html")
 
-@app.route("https://areyouaceo.onrender.com/predict", methods=["POST"])
+@app.route("/predict", methods=["POST"])
 def predict():
     print("收到請求，開始預測！")
     if "file" not in request.files:
@@ -165,29 +165,25 @@ def predict():
         return jsonify({"error": "沒有檔案被選擇！"})
 
     # 保存圖片
-    print("儲存圖片中...")
     file_path = os.path.join(app.config["UPLOAD_FOLDER"], secure_filename(file.filename))
     file.save(file_path)
 
     # 提取特徵
-    print("提取特徵中...")
     features = extract_42_features(file_path)
-    print(f"提取特徵: {features}")
     if features is None:
         return jsonify({"error": "無法檢測到臉部，請使用正確的臉部圖片！"})
 
     # 標準化特徵
     features_scaled = scaler.transform([features])
-    print("已完成標準化")
-
-    # 預測
     prediction_proba = model.predict_proba(features_scaled)[0]
-    print(f"預測概率: {prediction_proba}")
 
-    # 返回結果
     response = {
         "CEO Probability": f"{prediction_proba[1] * 100:.2f}%",
-        "Top Recommendations": ["微笑一下，提升自信！", "提眉手術，改善眉毛角度！"]
+        "Top Recommendations": [
+            "建議：微笑一下，提升自信！",
+            "建議：下巴線條優化，增強領袖氣質！",
+            "建議：提眉手術，改善眉毛角度！"
+        ]
     }
     return jsonify(response)
 
