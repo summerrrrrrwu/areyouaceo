@@ -26,21 +26,25 @@ face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, refine_landmarks=True)
 model = joblib.load("random_forest_model.pkl")
 scaler = joblib.load("scaler.pkl")  # 確保你保存過標準化的 scaler
 
-# 提取臉部 478 點並轉換為 42 維度的特徵
-def extract_42_features(image_path):
-    print(f"正在處理圖片: {image_path}")
+def extract_face_landmarks(image_path):
+    """提取圖片的臉部 478 特徵點"""
     image = cv2.imread(image_path)
     if image is None:
-        print("Error: Unable to load image.")
+        print(f"Error: Could not load {image_path}")
         return None
 
-    # 圖像處理：縮放與顏色轉換
-    image_resized = cv2.resize(image, (256, int(image.shape[0] * 256 / image.shape[1])))
-    rgb_image = cv2.cvtColor(image_resized, cv2.COLOR_BGR2RGB)
+    # 圖片縮放與轉換
+    new_width = 256
+    scaling_factor = new_width / image.shape[1]
+    new_height = int(image.shape[0] * scaling_factor)
+    resized_image = cv2.resize(image, (new_width, new_height))
+    rgb_image = cv2.cvtColor(resized_image, cv2.COLOR_BGR2RGB)
 
-    # 使用 Face Mesh 提取特徵
+
+    # 使用 Face Mesh 提取面部特徵
     results = face_mesh.process(rgb_image)
     if not results.multi_face_landmarks:
+        print("Error: No face detected.")
         return None
 
     face_landmarks = results.multi_face_landmarks[0].landmark
@@ -126,17 +130,34 @@ def calculate_42_features(landmarks):
         eyebrow_triangle_area = np.sqrt(semi_perimeter * (semi_perimeter - side_a) *
                                         (semi_perimeter - side_b) * (semi_perimeter - side_c))
         eyebrow_to_face_area_ratio = eyebrow_triangle_area / face_area if face_area != 0 else 0
+        
+        # 16. 眼尾到太陽穴的距離與顴骨寬度比例
+        temple_distance = np.linalg.norm(landmarks[389] - landmarks[359])
+        eye_tail_cheekbone_ratio = temple_distance / cheekbone_distance if cheekbone_distance != 0 else 0
 
-        # 整理特徵列表
+        # 17. 眉心寬度與額頭寬度比例
+        brow_center_width = np.linalg.norm(landmarks[285] - landmarks[55])
+        brow_forehead_ratio = brow_center_width / forehead_width if forehead_width != 0 else 0
+
+        # 18. 上嘴唇厚度與嘴唇厚度比例
+        upper_lip_thickness = np.linalg.norm(landmarks[13] - landmarks[0])
+        lip_thickness = np.linalg.norm(landmarks[17] - landmarks[0])
+        upper_lip_ratio = upper_lip_thickness / lip_thickness if lip_thickness != 0 else 0
+
+        # 19. 鼻長與鼻頭寬度比例
+        nose_length = np.linalg.norm(landmarks[8] - landmarks[2])
+        nose_length_to_width_ratio = nose_length / nose_tip_width if nose_tip_width != 0 else 0
+        
+        # 組合特徵
         features.extend([
-            face_width, face_length, face_ratio, nose_wing_to_tip_ratio,
-            forehead_to_eyebrow_distance, eyebrow_to_nose_distance, nose_to_chin_distance,
-            eye_width, five_eye_ratio, eye_height, eye_length_to_width_ratio,
-            nose_to_face_area_ratio, nose_to_upper_lip_distance, lower_lip_to_chin_distance,
-            nose_to_lip_ratio, cheekbone_distance, chin_distance, cheekbone_to_chin_ratio,
-            eyebrow_width, eyebrow_to_eye_ratio, mouth_width, nose_to_mouth_ratio,
-            eye_tail_angle, eyebrow_angle, forehead_face_length_ratio, iris_eye_area_ratio,
-            eyebrow_to_face_area_ratio
+            face_width, face_length, face_ratio, nose_wing_to_tip_ratio, forehead_to_eyebrow_distance,
+            eyebrow_to_nose_distance, nose_to_chin_distance, eye_width, five_eye_ratio, eye_height,
+            eye_length_to_width_ratio, nose_to_face_area_ratio, nose_to_upper_lip_distance,
+            lower_lip_to_chin_distance, nose_to_lip_ratio, cheekbone_distance, chin_distance,
+            cheekbone_to_chin_ratio, eyebrow_width, eyebrow_to_eye_ratio, mouth_width,
+            nose_to_mouth_ratio, eye_tail_angle, eyebrow_angle, forehead_face_length_ratio,
+            iris_eye_area_ratio, eyebrow_to_face_area_ratio, eye_tail_cheekbone_ratio,
+            brow_forehead_ratio, upper_lip_ratio, nose_length_to_width_ratio
         ])
 
         # 確保特徵數量達到 42
@@ -155,7 +176,6 @@ def index():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    print("收到請求，開始預測！")
     if "file" not in request.files:
         return jsonify({"error": "請選擇一個檔案！"})
 
@@ -172,19 +192,22 @@ def predict():
     if features is None:
         return jsonify({"error": "無法檢測到臉部，請使用正確的臉部圖片！"})
 
+    # 檢查特徵長度是否為 42
+    if len(features) != 42:
+        return jsonify({"error": "特徵提取錯誤，請使用其他圖片！"})
+
     # 標準化特徵
     features_scaled = scaler.transform([features])
-    prediction_proba = model.predict_proba(features_scaled)[0]
 
-    response = {
-        "CEO Probability": f"{prediction_proba[1] * 100:.2f}%",
-        "Top Recommendations": [
-            "建議：微笑一下，提升自信！",
-            "建議：下巴線條優化，增強領袖氣質！",
-            "建議：提眉手術，改善眉毛角度！"
-        ]
-    }
-    return jsonify(response)
+    # 預測
+    prediction_proba = model.predict_proba(features_scaled)[0]
+    ceo_probability = prediction_proba[1] * 100
+
+    # 回傳結果
+    return jsonify({
+        "CEO Probability": f"{ceo_probability:.2f}%",
+        "Top Recommendations": ["建議：微笑一下，提升自信！", "建議：注意臉部線條，增強氣質！"]
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
