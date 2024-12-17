@@ -14,6 +14,10 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+    print(f"Created uploads folder at: {UPLOAD_FOLDER}")
+
 # 初始化 Mediapipe Face Mesh 模型
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(static_image_mode=True, refine_landmarks=True)
@@ -24,6 +28,7 @@ scaler = joblib.load("scaler.pkl")  # 確保你保存過標準化的 scaler
 
 # 提取臉部 478 點並轉換為 42 維度的特徵
 def extract_42_features(image_path):
+    print(f"正在處理圖片: {image_path}")
     image = cv2.imread(image_path)
     if image is None:
         print("Error: Unable to load image.")
@@ -167,9 +172,16 @@ def predict():
     if features is None:
         return jsonify({"error": "無法檢測到臉部，請使用正確的臉部圖片！"})
 
+    # 記錄特徵提取的日誌
+    print(f"提取的特徵: {features}")
+    print(f"特徵長度: {len(features)}")
+
     # 標準化特徵並進行預測
     features_scaled = scaler.transform([features])
+    print("已完成特徵標準化")
+
     prediction_proba = model.predict_proba(features_scaled)[0]
+    print(f"預測結果: {prediction_proba}")
 
     # 給出建議
     recommendations = [
