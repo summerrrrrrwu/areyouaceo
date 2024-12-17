@@ -11,20 +11,26 @@
     <button onclick="uploadImage()">預測</button>
     <div id="result"></div>
     <script>
-        async function uploadImage() {
-            const fileInput = document.getElementById('fileInput');
-            if (!fileInput.files[0]) {
-                alert("請選擇一張照片");
-                return;
-            }
-            const formData = new FormData();
-            formData.append("file", fileInput.files[0]);
+    async function uploadImage() {
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput.files[0]) {
+            alert("請選擇一張照片");
+            return;
+        }
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
 
+        try {
             // 發送請求到後端 API
-            const response = await fetch("https://areyouaceo.onrender.com", {
+            const response = await fetch("https://areyouaceo.onrender.com", {  <!-- 注意路徑 -->
                 method: "POST",
                 body: formData
             });
+
+            if (!response.ok) {
+                throw new Error("預測失敗，請稍後重試！");
+            }
+
             const result = await response.json();
 
             // 顯示結果
@@ -36,7 +42,13 @@
                     <p>${result["Top Recommendations"].join('<br>')}</p>
                 `;
             }
-    </script>
+        } catch (error) {
+            console.error("Error:", error);
+            alert("發生錯誤，請檢查伺服器或網絡連接！");
+        }
+    }
+</script>
+
 </body>
 </html>
 
