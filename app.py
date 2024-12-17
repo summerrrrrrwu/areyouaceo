@@ -154,7 +154,7 @@ def calculate_42_features(landmarks):
 def index():
     return render_template("index.html")
 
-@app.route("https://areyouaceo.onrender.com", methods=["POST"])
+@app.route("https://areyouaceo.onrender.com/predict", methods=["POST"])
 def predict():
     print("收到請求，開始預測！")
     if "file" not in request.files:
