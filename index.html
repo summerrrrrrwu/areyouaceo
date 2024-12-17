@@ -22,7 +22,7 @@
 
         try {
             // 發送請求到後端 API
-            const response = await fetch("https://areyouaceo.onrender.com", {  <!-- 注意路徑 -->
+            const response = await fetch("https://areyouaceo.onrender.com/predict", {  <!-- 注意路徑 -->
                 method: "POST",
                 body: formData
             });
